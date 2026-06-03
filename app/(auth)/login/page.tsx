@@ -3,17 +3,32 @@
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Shield, Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react';
+import { Shield, Eye, EyeOff, Lock, Mail, AlertCircle, ShoppingBag } from 'lucide-react';
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Mode tab selector: 'admin' | 'seller'
+  const [roleMode, setRoleMode] = useState<'admin' | 'seller'>('admin');
+
+  const [email, setEmail] = useState('admin@aasa.dev');
+  const [password, setPassword] = useState('Admin@123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-fill credentials based on active role tab mode
+  useEffect(() => {
+    if (roleMode === 'admin') {
+      setEmail('admin@aasa.dev');
+      setPassword('Admin@123');
+    } else {
+      setEmail('seller@aasa.dev');
+      setPassword('Seller@123');
+    }
+    setError(null);
+  }, [roleMode]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -69,13 +84,41 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-800/80 bg-gray-900/50 p-8 shadow-2xl backdrop-blur-xl">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-            <Shield className="h-6 w-6" />
+            {roleMode === 'admin' ? <Shield className="h-6 w-6" /> : <ShoppingBag className="h-6 w-6" />}
           </div>
           <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-white">AasaMedChem</h2>
-          <p className="mt-2 text-sm text-gray-400">Inventory & Quotation Management</p>
+          <p className="mt-2 text-sm text-gray-400">Secure Access Portal Login</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {/* Role Tab Switcher */}
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-gray-950 border border-gray-800/85">
+          <button
+            type="button"
+            onClick={() => setRoleMode('admin')}
+            className={`flex items-center justify-center space-x-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+              roleMode === 'admin'
+                ? 'bg-blue-600 text-white shadow'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Shield className="h-3.5 w-3.5" />
+            <span>Admin Portal</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleMode('seller')}
+            className={`flex items-center justify-center space-x-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+              roleMode === 'seller'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <ShoppingBag className="h-3.5 w-3.5" />
+            <span>Seller Portal</span>
+          </button>
+        </div>
+
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="flex items-center space-x-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-400 border border-red-500/25">
               <AlertCircle className="h-5 w-5 shrink-0" />
@@ -95,7 +138,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seller@aasa.dev"
+                  placeholder={roleMode === 'admin' ? 'admin@aasa.dev' : 'seller@aasa.dev'}
                   className="block w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2.5 pl-10 pr-4 text-sm text-gray-200 placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-200"
                 />
               </div>
@@ -130,12 +173,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 transition-all duration-300"
+              className={`group relative flex w-full justify-center rounded-xl py-3 text-sm font-semibold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 transition-all duration-300 ${
+                roleMode === 'admin'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 focus:ring-blue-500'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 focus:ring-emerald-500'
+              }`}
             >
               {loading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
-                'Sign In'
+                `Sign In as ${roleMode === 'admin' ? 'Admin' : 'Seller'}`
               )}
             </button>
           </div>
